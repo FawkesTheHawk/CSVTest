@@ -1,0 +1,13 @@
+C:\Users\abazajian\source\repos\CSVTest\bin\Debug\netcoreapp3.1\CSVTest.exe
+C:\Users\abazajian\source\repos\CSVTest\bin\Debug\netcoreapp3.1\CSVTest.deps.json
+C:\Users\abazajian\source\repos\CSVTest\bin\Debug\netcoreapp3.1\CSVTest.runtimeconfig.json
+C:\Users\abazajian\source\repos\CSVTest\bin\Debug\netcoreapp3.1\CSVTest.runtimeconfig.dev.json
+C:\Users\abazajian\source\repos\CSVTest\bin\Debug\netcoreapp3.1\CSVTest.dll
+C:\Users\abazajian\source\repos\CSVTest\bin\Debug\netcoreapp3.1\CSVTest.pdb
+C:\Users\abazajian\source\repos\CSVTest\obj\Debug\netcoreapp3.1\CSVTest.csprojAssemblyReference.cache
+C:\Users\abazajian\source\repos\CSVTest\obj\Debug\netcoreapp3.1\CSVTest.AssemblyInfoInputs.cache
+C:\Users\abazajian\source\repos\CSVTest\obj\Debug\netcoreapp3.1\CSVTest.AssemblyInfo.cs
+C:\Users\abazajian\source\repos\CSVTest\obj\Debug\netcoreapp3.1\CSVTest.csproj.CoreCompileInputs.cache
+C:\Users\abazajian\source\repos\CSVTest\obj\Debug\netcoreapp3.1\CSVTest.dll
+C:\Users\abazajian\source\repos\CSVTest\obj\Debug\netcoreapp3.1\CSVTest.pdb
+C:\Users\abazajian\source\repos\CSVTest\obj\Debug\netcoreapp3.1\CSVTest.genruntimeconfig.cache
