@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Text;
+using System.Collections.Generic;
 
 
 namespace CSVTest
@@ -8,112 +9,212 @@ namespace CSVTest
     class Program
     {
         static StreamReader sr = new StreamReader("C:\\Users\\abazajian\\source\\repos\\CSVTest\\UpstreamModel_Val_22JUN2021.txt");
+        static List<string[]> unitAndDescription = new List<string[]>();
+        static List<string[]> unitAndTagAndTypeAndData = new List<string[]>();
+        static List<string> overallList = new List<string>();
+        static List<string> entireDocument = new List<string>();
+        static List<int> processModelIndexes = new List<int>();
         static void Main()
         {
-            string line;
-            string header;
-            while ((line = sr.ReadLine()) != null)
-                {
-                    if (line.Contains("Process Modeling:"))
-                    {
-                        string[] split1 = line.Split(":");
-                        header = FormatString(split1[1]);
-                        if (header.Equals("Units"))
-                        {
-                            ProcessModelingUnits();
-                        }
-
-                        // if header.equals Unit Tags make new method for this
-                        if (header.Equals("Unit Tags"))
-                        {
-                            ProcessModelingUnitTags();
-                        }
-                    }
-                    
-                }
-            
-        }
-
-        static void ProcessModelingUnits()
-        {
-            try
+            string readLine;
+            while ((readLine = sr.ReadLine()) != null)
             {
-                StringBuilder sb = new StringBuilder();
-
-                string[] introLine = new string[5]{"Unit", "Description", "Tag Name", "Tag Type", "Data Class"};
-                var fir = introLine[0];
-                var sec = introLine[1];
-                var thi = introLine[2];
-                var fou = introLine[3];
-                var fif = introLine[4];
-
-                var newLine = string.Format("{0},{1},{2},{3},{4}", fir, sec, thi, fou, fif);
-
-                sb.AppendLine(newLine);
-                string line;
-                while ((line = sr.ReadLine()) != null)
+                if(readLine.Trim().Equals(String.Empty))
                 {
-                    if (line.Contains("Unit:"))
-                    {
-                        sb.AppendLine(LookForUnitAndDescription(line));
-                    }
-                    else if (line.Contains("Process Modeling: Unit Tags"))
-                    {
-                        return;
-                    }
+                    continue;
                 }
-
-                System.IO.File.WriteAllText("C:\\Users\\abazajian\\source\\repos\\CSVTest\\asd.csv", sb.ToString());
-                Console.WriteLine("Im Here");
+                entireDocument.Add(FormatString(readLine));
             }
-            catch (Exception e)
+
+            foreach (string line in entireDocument)
             {
-                Console.WriteLine("Exception: " + e.Message);
-            }
-            finally
-            {
-                Console.WriteLine("Executing finally block.");
-            }
-        }
-
-        static void ProcessModelingUnitTags()
-        {
-
-        }
-
-        static string LookForUnitAndDescription(string line)
-        {
-            string[] split1 = line.Split("Unit:");
-            string first = FormatString(split1[1]);
-            string second = " ";
-            bool nextlinebool = false;
-
-            string nextLine;
-            while ((nextLine = sr.ReadLine()) != string.Empty)
-            {
-                if (nextLine.Contains("Description:"))
+                if (line.Contains("Process Modeling:"))
                 {
-                    string[] split2 = nextLine.Split("Description:");
-                    second = FormatString(split2[1]);
-
-                    nextlinebool = true;
+                    processModelIndexes.Add(entireDocument.IndexOf(line));
                 }
-                else if (nextlinebool)
+            }
+            int i = 0;
+            foreach (int processModelIndex in processModelIndexes)
+            {
+                string header = GrabStringValueFromLine(entireDocument[processModelIndex]);
+                switch(header)
                 {
-                    second = FormatString(second) + FormatString(nextLine);
-                    ;
+                    case "Units":
+                        ProcessModelingUnits(processModelIndex, i);
+                        break;
+                    case "Unit Tags":
+                        ProcessModelingUnitTags(processModelIndex, i);
+                        break;
+                    case "Connections":
+                        // ProcessModelingUnits();
+                        break;
+                    case "Connection Tags":
+                        // ProcessModelingUnits();
+                        break;
+                    case "Enumerations":
+                        // ProcessModelingUnits();
+                        break;
+                    case "Processes":
+                        // ProcessModelingUnits();
+                        break;
+                    case "Process Tags":
+                        // ProcessModelingUnits();
+                        break;
+                    case "Process Phases":
+                        // ProcessModelingUnits();
+                        break;
+                    case "Segments":
+                        // ProcessModelingUnits();
+                        break;
+                    case "Segment Tags":
+                        // ProcessModelingUnits();
+                        break;
+                    case "Transfers":
+                        // ProcessModelingUnits();
+                        break;
+                    case "Transfer Tags":
+                        // ProcessModelingUnits();
+                        break;
+                    case "Transfer Phases":
+                        // ProcessModelingUnits();
+                        break;
+                    default:
+                        Console.WriteLine("Default case");
+                        break;
                 }
-                else
-                {
-                    Console.WriteLine("You shouldn't end up here. something is weird with this description");
-                    nextlinebool = false;
-                } 
+
+                i++;
+            }
+
+            for (int j = 0; j<unitAndTagAndTypeAndData.Count-1; j++)
+            {
                 
             }
+        }
 
-            var output = string.Format("{0},{1}", first, second);
+
+    #region  ProcessModeling: Units
+        static void ProcessModelingUnits(int indexOfEntireDocument, int indexOfProcessModels)
+        {
+            int startIndex = indexOfEntireDocument;
+            int currentIndex = startIndex;
+            int endIndex = processModelIndexes[indexOfProcessModels+1];
+            try
+            {
+                List<int> unitsIndexes = new List<int>();
+                for (;currentIndex < endIndex; currentIndex++)
+                {
+                    string line = entireDocument[currentIndex];
+                    if (line.Contains("Unit:"))
+                    {
+                        unitsIndexes.Add(currentIndex);
+                    }
+                }
+                
+                for (int i=0; i<unitsIndexes.Count-1; i++)
+                {
+                    unitAndDescription.Add(LookForUnitAndDescription(unitsIndexes[i]));
+                }
+
+                // foreach (string[] line in unitAndDescription){
+                //     Console.WriteLine(line[0] + "," + line[1]);
+                // }
+            }
+            catch (Exception e){Console.WriteLine("Exception: " + e.Message); }
+            finally{Console.WriteLine("Executing finally block.");}
+        }
+
+        static string[] LookForUnitAndDescription(int indexOfEntireDocument)
+        {
+            string first = GrabStringValueFromLine(entireDocument[indexOfEntireDocument]);
+            string second = " ";
+
+            string line;
+            indexOfEntireDocument++;
+            while (!(entireDocument[indexOfEntireDocument].Contains("Unit:")))
+            {
+                line = entireDocument[indexOfEntireDocument];
+                if (line.Contains("Description:"))
+                {
+                    second = GrabStringValueFromLine(line);
+                }
+                else {
+                    second = second + " " +entireDocument[indexOfEntireDocument].Trim();
+                }
+                indexOfEntireDocument++;
+                
+            }
+            string[] output = new string[2]{first, second};
             return output;
         }
+
+    #endregion
+
+    #region Unit Tags
+        static void ProcessModelingUnitTags(int indexOfEntireDocument, int indexOfProcessModels)
+        {
+            int startIndex = indexOfEntireDocument;
+            int currentIndex = startIndex;
+            int endIndex = processModelIndexes[indexOfProcessModels+1];
+            try
+            {
+                // a list of locations where "Unit:" is found within the header "Process Modeling: Unit Tags"
+                List<int> unitsIndexes = new List<int>();
+                for (;currentIndex < endIndex; currentIndex++)
+                {
+                    string line = entireDocument[currentIndex];
+                    if (line.Contains("Unit:"))
+                    {
+                        unitsIndexes.Add(currentIndex);
+                    }
+                }
+                
+                for (int i=0; i<unitsIndexes.Count-1; i++)
+                {
+                    string unitName = GrabStringValueFromLine(entireDocument[indexOfEntireDocument]);
+                    LookForTagTypeData(unitsIndexes[i], unitName);
+                }
+            }
+            catch (Exception e){Console.WriteLine("Exception: " + e.Message); }
+            finally{Console.WriteLine("Executing finally block.");}
+            
+        }
+    #endregion
+
+        static void LookForTagTypeData(int indexOfEntireDocument, string unitName)
+        {
+            List<string> nameIndexes = new List<string>();
+            List<string> typeIndexes = new List<string>();
+            List<string> classIndexes = new List<string>();
+
+            while (!(entireDocument[indexOfEntireDocument].Contains("Unit:")))
+            {
+                string line = entireDocument[indexOfEntireDocument];
+                switch (line.Split(":")[0].Trim())
+                {
+                    case "Tag Name":
+                        nameIndexes.Add(GrabStringValueFromLine(line));
+                        break;
+                    case "Tag Type":
+                        typeIndexes.Add(GrabStringValueFromLine(line));
+                        break;
+                    case "Data Class":
+                        classIndexes.Add(GrabStringValueFromLine(line));
+                        break;
+                    default:
+                        break;
+                }
+                indexOfEntireDocument++;
+            }
+
+            for(int i=0; i<nameIndexes.Count-1;i++)
+            {
+                string[] output = new string[4]{unitName, nameIndexes[i], typeIndexes[i], classIndexes[i]};
+                unitAndTagAndTypeAndData.Add(output);
+            }
+        }
+
+    #region Common Functions
 
         static string FormatString(string lineUnformatted)
         {
@@ -121,6 +222,10 @@ namespace CSVTest
             try
             {
                 lineUnformatted = lineUnformatted.Replace("," , "");
+                if (lineUnformatted.Contains("Date"))
+                {
+                    lineUnformatted = lineUnformatted.Replace("Date" , "");
+                }
             }
             catch
             {
@@ -130,9 +235,45 @@ namespace CSVTest
             {
                 formattedLine = lineUnformatted.Trim();
             }
-             return (formattedLine);
+            return (formattedLine);
         }
 
+        // static int GetUnitAndDecriptionIndex(string unitName)
+        // {
+        //     int indexOfUnit;
+        //     foreach (string[] line in unitAndDescription)
+        //     {
+        //         if (line[0].Equals(unitName))
+        //         {
+        //             indexOfUnit = unitAndDescription.IndexOf(line);
+        //             return indexOfUnit;
+        //         }
+        //     }
+        //     return 0;
+
+        // }
+
+        static string GrabStringValueFromLine(string line)
+        {
+            return FormatString(line.Split(":")[1]);
+        }
+
+    #endregion
+
+
+    #region final export
+    static void SetupFunction()
+        {
+            string[] introLine = new string[5]{"Unit", "Description", "Tag Name", "Tag Type", "Data Class"};
+            var fir = introLine[0];
+            var sec = introLine[1];
+            var thi = introLine[2];
+            var fou = introLine[3];
+            var fif = introLine[4];
+
+            overallList.Add(string.Format("{0},{1},{2},{3},{4}", fir, sec, thi, fou, fif));
+        }
+    #endregion
     }
 
     
