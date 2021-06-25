@@ -86,71 +86,69 @@ namespace CSVTest
                 i++;
             }
 
-            for (int j = 0; j<unitAndTagAndTypeAndData.Count-1; j++)
-            {
-                
-            }
+            SetupFunction();
+
         }
 
-
-    #region  ProcessModeling: Units
-        static void ProcessModelingUnits(int indexOfEntireDocument, int indexOfProcessModels)
-        {
-            int startIndex = indexOfEntireDocument;
-            int currentIndex = startIndex;
-            int endIndex = processModelIndexes[indexOfProcessModels+1];
-            try
+    #region Unit and Unit Tags
+        #region  ProcessModeling: Units
+            static void ProcessModelingUnits(int indexOfEntireDocument, int indexOfProcessModels)
             {
-                List<int> unitsIndexes = new List<int>();
-                for (;currentIndex < endIndex; currentIndex++)
+                int startIndex = indexOfEntireDocument;
+                int currentIndex = startIndex;
+                int endIndex = processModelIndexes[indexOfProcessModels+1];
+                try
                 {
-                    string line = entireDocument[currentIndex];
-                    if (line.Contains("Unit:"))
+                    List<int> unitsIndexes = new List<int>();
+                    for (;currentIndex < endIndex; currentIndex++)
                     {
-                        unitsIndexes.Add(currentIndex);
+                        string line = entireDocument[currentIndex];
+                        if (line.Contains("Unit:"))
+                        {
+                            unitsIndexes.Add(currentIndex);
+                        }
                     }
-                }
-                
-                for (int i=0; i<unitsIndexes.Count-1; i++)
-                {
-                    unitAndDescription.Add(LookForUnitAndDescription(unitsIndexes[i]));
-                }
+                    
+                    for (int i=0; i<unitsIndexes.Count-1; i++)
+                    {
+                        unitAndDescription.Add(LookForUnitAndDescription(unitsIndexes[i]));
+                    }
 
-                // foreach (string[] line in unitAndDescription){
-                //     Console.WriteLine(line[0] + "," + line[1]);
-                // }
+                    // foreach (string[] line in unitAndDescription){
+                    //     Console.WriteLine(line[0] + "," + line[1]);
+                    // }
+                }
+                catch (Exception e){Console.WriteLine("Exception: " + e.Message); }
+                finally{Console.WriteLine("Executing finally block.");}
             }
-            catch (Exception e){Console.WriteLine("Exception: " + e.Message); }
-            finally{Console.WriteLine("Executing finally block.");}
-        }
 
-        static string[] LookForUnitAndDescription(int indexOfEntireDocument)
-        {
-            string first = GrabStringValueFromLine(entireDocument[indexOfEntireDocument]);
-            string second = " ";
-
-            string line;
-            indexOfEntireDocument++;
-            while (!(entireDocument[indexOfEntireDocument].Contains("Unit:")))
+            static string[] LookForUnitAndDescription(int indexOfEntireDocument)
             {
-                line = entireDocument[indexOfEntireDocument];
-                if (line.Contains("Description:"))
-                {
-                    second = GrabStringValueFromLine(line);
-                }
-                else {
-                    second = second + " " +entireDocument[indexOfEntireDocument].Trim();
-                }
+                string first = GrabStringValueFromLine(entireDocument[indexOfEntireDocument]);
+                string second = " ";
+
+                string line;
                 indexOfEntireDocument++;
-                
+                while (!(entireDocument[indexOfEntireDocument].Contains("Unit:")))
+                {
+                    line = entireDocument[indexOfEntireDocument];
+                    if (line.Contains("Description:"))
+                    {
+                        second = GrabStringValueFromLine(line);
+                    }
+                    else {
+                        second = second + " " +entireDocument[indexOfEntireDocument].Trim();
+                    }
+                    indexOfEntireDocument++;
+                    
+                }
+                string[] output = new string[2]{first, second};
+                return output;
             }
-            string[] output = new string[2]{first, second};
-            return output;
-        }
 
-    #endregion
+        #endregion
 
-    #region Unit Tags
+        #region Unit Tags
         static void ProcessModelingUnitTags(int indexOfEntireDocument, int indexOfProcessModels)
         {
             int startIndex = indexOfEntireDocument;
@@ -169,9 +167,11 @@ namespace CSVTest
                     }
                 }
                 
+                // Console.WriteLine("units length in Units Tags: " + unitsIndexes.Count);
                 for (int i=0; i<unitsIndexes.Count-1; i++)
                 {
-                    string unitName = GrabStringValueFromLine(entireDocument[indexOfEntireDocument]);
+                    string unitName = GrabStringValueFromLine(entireDocument[unitsIndexes[i]]);
+                    // Console.WriteLine("unit names: " + unitName);
                     LookForTagTypeData(unitsIndexes[i], unitName);
                 }
             }
@@ -179,34 +179,46 @@ namespace CSVTest
             finally{Console.WriteLine("Executing finally block.");}
             
         }
+        #endregion
+        static string GetDescription(string unitName)
+        {
+            string description = "no description found";
+            foreach (string[] UandD in unitAndDescription)
+            {
+                if (UandD[0].Equals(unitName))
+                {
+                    description = UandD[1];
+                }
+            }
+            return description;
+        }
     #endregion
 
         static void LookForTagTypeData(int indexOfEntireDocument, string unitName)
         {
+            indexOfEntireDocument++;
             List<string> nameIndexes = new List<string>();
             List<string> typeIndexes = new List<string>();
             List<string> classIndexes = new List<string>();
-
             while (!(entireDocument[indexOfEntireDocument].Contains("Unit:")))
             {
                 string line = entireDocument[indexOfEntireDocument];
-                switch (line.Split(":")[0].Trim())
+                // Console.WriteLine("line: " + line);
+                string newLine = line.Split(":")[0].Trim();
+                if (newLine.Equals("Tag Name"))
                 {
-                    case "Tag Name":
-                        nameIndexes.Add(GrabStringValueFromLine(line));
-                        break;
-                    case "Tag Type":
-                        typeIndexes.Add(GrabStringValueFromLine(line));
-                        break;
-                    case "Data Class":
-                        classIndexes.Add(GrabStringValueFromLine(line));
-                        break;
-                    default:
-                        break;
+                    nameIndexes.Add(GrabStringValueFromLine(line));
                 }
+                else if (newLine.Equals("Tag Type"))
+                {
+                    typeIndexes.Add(GrabStringValueFromLine(line));
+                }
+                else if (newLine.Equals("Data Class"))
+                {
+                    classIndexes.Add(GrabStringValueFromLine(line));
+                }                
                 indexOfEntireDocument++;
             }
-
             for(int i=0; i<nameIndexes.Count-1;i++)
             {
                 string[] output = new string[4]{unitName, nameIndexes[i], typeIndexes[i], classIndexes[i]};
@@ -262,8 +274,9 @@ namespace CSVTest
 
 
     #region final export
-    static void SetupFunction()
+        static void SetupFunction()
         {
+            StringBuilder sb = new StringBuilder();
             string[] introLine = new string[5]{"Unit", "Description", "Tag Name", "Tag Type", "Data Class"};
             var fir = introLine[0];
             var sec = introLine[1];
@@ -271,7 +284,20 @@ namespace CSVTest
             var fou = introLine[3];
             var fif = introLine[4];
 
-            overallList.Add(string.Format("{0},{1},{2},{3},{4}", fir, sec, thi, fou, fif));
+            var line = (string.Format("{0},{1},{2},{3},{4}", fir, sec, thi, fou, fif));
+            sb.AppendLine(line);
+
+            Console.WriteLine("count of unit and whatever: " + unitAndTagAndTypeAndData.Count);
+
+            for (int j = 0; j<unitAndTagAndTypeAndData.Count-1; j++)
+            {
+                
+                string[] rightline = unitAndTagAndTypeAndData[j];
+                var newLine = string.Format("{0},{1},{2},{3},{4}", rightline[0], GetDescription(rightline[0]), rightline[1], rightline[2], rightline[3]);
+                sb.AppendLine(newLine);
+
+            }
+            System.IO.File.WriteAllText("C:\\Users\\abazajian\\source\\repos\\CSVTest\\asd.csv", sb.ToString());
         }
     #endregion
     }
