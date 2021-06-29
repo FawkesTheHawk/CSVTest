@@ -8,7 +8,7 @@ namespace CSVTest
 {
     class Program
     {
-        static StreamReader sr = new StreamReader("C:\\Users\\abazajian\\source\\repos\\CSVTest\\UpstreamModel_Val_22JUN2021.txt");
+        static StreamReader sr = new StreamReader("C:\\Users\\abazajian\\source\\repos\\CSVTest\\DownstreamModel_Val_22JUN2021.txt");
         static List<string[]> unitAndDescription = new List<string[]>();
         static List<string[]> unitAndTagAndTypeAndData = new List<string[]>();
         static List<string> overallList = new List<string>();
@@ -19,6 +19,13 @@ namespace CSVTest
         static List<ConnectionTags> allConnectionTags = new List<ConnectionTags>();
         static List<EquipmentStatus> allEquipmentStatus = new List<EquipmentStatus>();
         static List<Processes> allProcesses = new List<Processes>();
+        static List<ProcessTags> allProcessTags = new List<ProcessTags>();
+        static List<Segments> allSegements = new List<Segments>();
+        static List<SegmentTags> allSegementTags = new List<SegmentTags>();
+        static List<Transfers> allTransfers = new List<Transfers>();
+        static List<TransferTags> allTransferTags = new List<TransferTags>();
+        static List<Parameters> allProcessPhases = new List<Parameters>();
+        static List<Parameters> allTransferPhases = new List<Parameters>();
 
         static void Main()
         {
@@ -69,25 +76,32 @@ namespace CSVTest
                         ExportFunctionProcesses();
                         break;
                     case "Process Tags":
-                        // ProcessModelingUnits();
+                        ProcessModelingProcessTags(indexOfProcessModel, i);
+                        ExportFunctionProcessTags();
                         break;
                     case "Process Phases":
-                        // ProcessModelingUnits();
+                        ProcessModelingPhases(indexOfProcessModel, i, "Process");
+                        ExportPhases("Process");
                         break;
                     case "Segments":
-                        // ProcessModelingUnits();
+                        ProcessModelingSegments(indexOfProcessModel, i);
+                        ExportFunctionSegments();
                         break;
                     case "Segment Tags":
-                        // ProcessModelingUnits();
+                        ProcessModelingSegmentTags(indexOfProcessModel, i);
+                        ExportFunctionSegmentTags();
                         break;
                     case "Transfers":
-                        // ProcessModelingUnits();
+                        ProcessModelingTransfers(indexOfProcessModel, i);
+                        ExportFunctionTransfers();
                         break;
                     case "Transfer Tags":
-                        // ProcessModelingUnits();
+                        ProcessModelingTransferTags(indexOfProcessModel, i);
+                        ExportFunctionTransferTags();
                         break;
                     case "Transfer Phases":
-                        // ProcessModelingUnits();
+                        ProcessModelingPhases(indexOfProcessModel, i, "Transfer");
+                        ExportPhases("Transfer");
                         break;
                     default:
                         Console.WriteLine("Default case");
@@ -98,6 +112,186 @@ namespace CSVTest
             }
 
         }
+
+    #region Phases
+
+        static void ProcessModelingPhases(int indexOfEntireDocument, int indexOfProcessModel, string phaseType)
+        {
+            int endingIndex = entireDocument.Count-1;
+            List<int> parameterIndex = new List<int>(); 
+            if (indexOfProcessModel == processModelIndexes.Count-1)
+            {
+                endingIndex = entireDocument.Count;
+            }
+            else 
+            {
+                endingIndex = processModelIndexes[indexOfProcessModel+1];
+            }
+
+            for(;indexOfEntireDocument<endingIndex;indexOfEntireDocument++)
+            {
+                string line = entireDocument[indexOfEntireDocument];
+                if (line.Contains("Parameter:"))
+                {
+                    parameterIndex.Add(indexOfEntireDocument);
+                }
+            }
+
+            foreach (int index in parameterIndex)
+            {
+                int upperIndex = processModelIndexes[indexOfProcessModel];
+                Parameters p = new Parameters();
+                p.torp = GrabStringValueFromLine(entireDocument[GetIndexFromAboveForParamter(index, phaseType+":", upperIndex)]);
+                p.phase = GrabStringValueFromLine(entireDocument[GetIndexFromAboveForParamter(index, "Phase:", upperIndex)]);
+                p.phaseDescription = GetDescriptionForAnyinPhase(GetIndexFromAboveForParamter(index, "Description:", upperIndex));
+                p.parameter = GrabStringValueFromLine(entireDocument[index]);
+                p.parameterDescription = GetDescriptionForAnyinPhase(index+1);
+                p.type = GrabStringValueFromLine(entireDocument[GetIndexFromBelowForParamter(index, "Type:", endingIndex)]);
+                //getting target & target value
+                int indexOfMultiChoice = GetIndexFromBelowForParamter(index, "Target:", endingIndex);
+                if (indexOfMultiChoice != 1)
+                {
+                    // Console.WriteLine(string.Format("the target line for {0}, is {1}", p.parameter, entireDocument[indexOfMultiChoice]));
+                    p.target = GrabStringValueFromLine(entireDocument[indexOfMultiChoice]);
+                    string checkLine = entireDocument[indexOfMultiChoice+1];
+                    if (checkLine.Contains(":"))
+                    {
+                        p.targetValue = GrabStringValueFromLine(checkLine);
+                    }
+                }
+                indexOfMultiChoice = GetIndexFromBelowForParamter(index, "Actual:", endingIndex);
+                if (indexOfMultiChoice != 1)
+                {
+                    p.actual = GrabStringValueFromLine(entireDocument[indexOfMultiChoice]);
+                }
+                indexOfMultiChoice = GetIndexFromBelowForParamter(index, "High Dev.:", endingIndex);
+                if (indexOfMultiChoice != 1)
+                {
+                    p.highDev = GrabStringValueFromLine(entireDocument[indexOfMultiChoice]);
+                    string checkLine = entireDocument[indexOfMultiChoice+1];
+                    if (checkLine.Contains(":"))
+                    {
+                        p.highDevValue = GrabStringValueFromLine(checkLine);
+                    }
+                }
+                indexOfMultiChoice = GetIndexFromBelowForParamter(index, "Low Dev.:", endingIndex);
+                if (indexOfMultiChoice != 1)
+                {
+                    p.lowDev = GrabStringValueFromLine(entireDocument[indexOfMultiChoice]);
+                    string checkLine = entireDocument[indexOfMultiChoice+1];
+                    if (checkLine.Contains(":"))
+                    {
+                        p.lowDevValue = GrabStringValueFromLine(checkLine);
+                    }
+                }
+                indexOfMultiChoice = GetIndexFromBelowForParamter(index, "High Limit:", endingIndex);
+                if (indexOfMultiChoice != 1)
+                {
+                    p.highLimit = GrabStringValueFromLine(entireDocument[indexOfMultiChoice]);
+                    string checkLine = entireDocument[indexOfMultiChoice+1];
+                    if (checkLine.Contains(":"))
+                    {
+                        p.highLimitValue = GrabStringValueFromLine(checkLine);
+                    }
+                }
+                indexOfMultiChoice = GetIndexFromBelowForParamter(index, "Low Limit:", endingIndex);
+                if (indexOfMultiChoice != 1)
+                {
+                    p.lowLimit = GrabStringValueFromLine(entireDocument[indexOfMultiChoice]);
+                    string checkLine = entireDocument[indexOfMultiChoice+1];
+                    if (checkLine.Contains(":"))
+                    {
+                        p.lowLimitValue = GrabStringValueFromLine(checkLine);
+                    }
+                }
+                indexOfMultiChoice = GetIndexFromBelowForParamter(index, "Preact:", endingIndex);
+                if (indexOfMultiChoice != 1)
+                {
+                    p.preact = GrabStringValueFromLine(entireDocument[indexOfMultiChoice]);
+                    string checkLine = entireDocument[indexOfMultiChoice+1];
+                    if (checkLine.Contains(":"))
+                    {
+                        p.preactValue = GrabStringValueFromLine(checkLine);
+                    }
+                }
+                indexOfMultiChoice = GetIndexFromBelowForParamter(index, "Lot Code:", endingIndex);
+                if (indexOfMultiChoice != 1)
+                {
+                    p.lotCode = GrabStringValueFromLine(entireDocument[indexOfMultiChoice]);
+                }
+                indexOfMultiChoice = GetIndexFromBelowForParamter(index, "Mat. Id:", endingIndex);
+                if (indexOfMultiChoice != 1)
+                {
+                    p.matId = GrabStringValueFromLine(entireDocument[indexOfMultiChoice]);
+                }
+
+                if (phaseType.Equals("Process"))
+                {
+                    allProcessPhases.Add(p);
+                }
+                else if (phaseType.Equals("Transfer"))
+                {
+                    allTransferPhases.Add(p);
+                }
+
+            }
+        }
+
+        static string GetDescriptionForAnyinPhase(int startIndex)
+        {
+            string output = "";
+            int endIndex = FindEndIndex(":", startIndex+1);
+            for(;startIndex<endIndex;startIndex++)
+            {
+                string line = entireDocument[startIndex];
+                if (line.Contains("Description:"))
+                {
+                    output = GrabStringValueFromLine(line);
+                }
+                else 
+                {
+                    output = output + " " + line;
+                }
+            }
+            return output;
+        }
+
+        static int GetIndexFromAboveForParamter(int index, string searchString, int upperIndex)
+        {
+            bool isItemFound = false;
+            int output = 1;
+            while(index>upperIndex && !isItemFound)
+            {
+                string line = entireDocument[index];
+                if (line.Contains(searchString))
+                {
+                    output = index;
+                    isItemFound = true;
+                }
+                index--;
+            }
+            return (output);
+        }
+
+        static int GetIndexFromBelowForParamter(int index, string searchString, int lowerIndex)
+        {
+            bool isItemFound = false;
+            int output = 1;
+            index++;
+            while(index<lowerIndex && !isItemFound && !entireDocument[index].Contains("Parameter:"))
+            {
+                string line = entireDocument[index];
+                if (line.Contains(searchString))
+                {
+                    output = index;
+                    isItemFound = true;
+                }
+                index++;
+            }
+            return (output);
+        }
+
+    #endregion
 
     #region Unit and Unit Tags
         #region  ProcessModeling: Units
@@ -463,16 +657,52 @@ namespace CSVTest
                 indexOfProcesses.Add(indexOfEntireDocument);
             }
         }
-
+        List<Processes> holderProcessList = new List<Processes>();
         foreach(int i in indexOfProcesses)
         {
             Processes p = new Processes();
             p.process = GrabStringValueFromLine(entireDocument[i]);
             p.description = GetDescriptionFromProcesses(i, processModelIndexes[indexOfProcessModels+1]);
-            Console.WriteLine("i = " + i);
-            GetUnitAttyValFromProcesses(i, processModelIndexes[indexOfProcessModels+1], p);
+            // Console.WriteLine("i = " + i);
+            p = GetUnitAttyValFromProcesses(i, processModelIndexes[indexOfProcessModels+1], p);
+            holderProcessList.Add(p);
         }
-        Console.WriteLine("length og indexofProcesses: " + indexOfProcesses.Count);
+        // Console.WriteLine("length of indexofProcesses: " + indexOfProcesses.Count);
+
+        foreach (Processes proc in holderProcessList)
+        {
+            foreach(string unitLine in proc.unitLine)
+            {
+                Processes p = new Processes();
+                p.process = proc.process;
+                p.description = proc.description;
+                // Console.WriteLine(unitLine);
+                string[] newline = unitLine.Split(' ');
+                if (newline.Length>1)
+                {
+                    int j = 0;
+                    for(int i=0;i<newline.Length;i++)
+                    {
+                        if (!string.IsNullOrEmpty(newline[i]))
+                        {
+                            newline[j] = newline[i];
+                            j++;
+                        }
+                    }
+                    p.units = newline[0];
+                    p.attributes = newline[1];
+                    p.value = newline[2];
+                }
+                else 
+                {
+                    p.units = newline[0];
+                    p.attributes = " ";
+                    p.value = " ";
+                }
+
+                allProcesses.Add(p);               
+            }
+        }
 
     }
 
@@ -494,55 +724,376 @@ namespace CSVTest
         return output;
     }
 
-    static void GetUnitAttyValFromProcesses(int startIndex, int endIndex, Processes p)
+    static Processes GetUnitAttyValFromProcesses(int startIndex, int endIndex, Processes p)
     {
-        startIndex= startIndex +2;
+        startIndex = FindEndIndex("-----", startIndex)+1;
+        int i = 0;
         while (startIndex<endIndex && !entireDocument[startIndex].Contains("Process"))
         {
-            Console.WriteLine("start index = " + startIndex);
-            string line = entireDocument[startIndex];
-            if (line.Contains("Units") || line.Contains("Attributes") || line.Contains("--------"))
-            {
-                Console.WriteLine("continues");
-                startIndex++;
-                continue;
-            }
-            else
-            {
-                Processes newP = new Processes();
-                newP.process = p.process;
-                newP.description = p.description;
+            p.numberOfUnits = i;
+            p.unitLine.Add(entireDocument[startIndex]);
+            startIndex++;
+        }
 
-                while(newP.units.Equals(string.Empty))
+        return p;
+    }
+    
+    static void ProcessModelingProcessTags(int indexOfEntireDocument, int indexOfProcessModels)
+    {
+        string line = "";
+        List<int> allProcessTagIndexes = new List<int>();
+        List<int> allTagNames = new List<int>();
+        List<int> allDataClasses = new List<int>();
+        List<int> allTagTypes = new List<int>();
+        List<int> allDescriptions = new List<int>();
+        for(;indexOfEntireDocument<processModelIndexes[indexOfProcessModels+1]; indexOfEntireDocument++)
+        {
+            line = entireDocument[indexOfEntireDocument];
+            if (line.Contains("Process:"))
+            {
+                allProcessTagIndexes.Add(indexOfEntireDocument);
+            }
+            else if (line.Contains("Tag Name:"))
+            {
+                allTagNames.Add(indexOfEntireDocument);
+            }
+            else if (line.Contains("Description:"))
+            {
+                allDescriptions.Add(indexOfEntireDocument);
+            }
+            else if (line.Contains("Tag Type:"))
+            {
+                allTagTypes.Add(indexOfEntireDocument);
+            }
+            else if (line.Contains("Data Class:"))
+            {
+                allDataClasses.Add(indexOfEntireDocument);
+            }
+        }
+        allProcessTagIndexes.Add(processModelIndexes[indexOfProcessModels+1]);
+        for(int i=0;i<allTagNames.Count;i++)
+        {
+            ProcessTags t = new ProcessTags();
+            int smallIndex = allProcessTagIndexes.FindLastIndex(x => x<allTagNames[i]);
+            t.process = GrabStringValueFromLine(entireDocument[allProcessTagIndexes[smallIndex]]);
+            t.dataClass = GrabStringValueFromLine(entireDocument[allDataClasses[i]]);
+            t.description = GetDescriptionOfProcessTags(allDescriptions[i]);
+            t.tagName = GrabStringValueFromLine(entireDocument[allTagNames[i]]);
+            t.tagType = GrabStringValueFromLine(entireDocument[allTagTypes[i]]);
+
+            allProcessTags.Add(t);
+        }
+
+    }
+
+    static string GetDescriptionOfProcessTags(int indexOfEntireDocument)
+    {
+        string line = entireDocument[indexOfEntireDocument];
+
+        if (!line.Contains("Description:"))
+        {
+            return null;
+        }
+
+        string lineValue = GrabStringValueFromLine(line);
+        int endIndex = FindEndIndex("Tag Type:",indexOfEntireDocument);
+
+        for (; indexOfEntireDocument<endIndex; indexOfEntireDocument++)
+        {
+            lineValue = lineValue + " " + FormatString(entireDocument[indexOfEntireDocument]);
+        }
+
+        if (lineValue.Trim().Equals("Description:")){
+            lineValue = "";
+        }
+        return lineValue;
+    }
+
+    #endregion
+
+    #region segments
+        static void ProcessModelingSegments(int indexOfEntireDocument, int indexOfProcessModels)
+        {
+            List<int> allSegIndexes = new List<int>();
+            for(;indexOfEntireDocument<processModelIndexes[indexOfProcessModels+1]; indexOfEntireDocument++)
+            {
+                string line = entireDocument[indexOfEntireDocument];
+                if (line.Contains("Segment:"))
                 {
-                    line = entireDocument[startIndex];
-                    string[] brokline = line.Split(" ");
-                    if (brokline.Length == 0)
-                    {
-                        startIndex++;
-                    }
-                    if (brokline.Length >= 1)
-                    {
-                        newP.units = brokline[0];
-                        continue;
-                    }
-                    if (brokline.Length >= 2)
-                    {
-                        newP.attributes = brokline[1];
-                        continue;
-                    }
-                    if (brokline.Length >= 3)
-                    {
-                        newP.value = brokline[2];
-                        continue;
-                    }
-                allProcesses.Add(newP);
+                    allSegIndexes.Add(indexOfEntireDocument);
                 }
+            }
+
+            foreach(int i in allSegIndexes)
+            {
+                Segments s = new Segments();
+                s.segment = GrabStringValueFromLine(entireDocument[i]);
+                int endIndex = FindEndIndex("Process Modeling:", "Segment:", i+1);
+                s.description = GetDescriptionFromSegment(i+1, endIndex);
+
+                allSegements.Add(s);
+            }
+        }
+
+        static string GetDescriptionFromSegment(int startIndex, int endIndex)
+        {
+            string output = " ";
+            while(startIndex<endIndex)
+            {
+                string line = entireDocument[startIndex];
+                if(line.Contains("Description:"))
+                {
+                    output = GrabStringValueFromLine(line);
+                }
+                else
+                {
+                    output = output + " " + line;
+                }
+                startIndex++;
+            }
+
+            return output;
+        }
+    
+    static void ProcessModelingSegmentTags(int indexOfEntireDocument, int indexOfProcessModels)
+    {
+        string line = "";
+        List<int> allProcessTagIndexes = new List<int>();
+        List<int> allTagNames = new List<int>();
+        List<int> allDataClasses = new List<int>();
+        List<int> allTagTypes = new List<int>();
+        List<int> allDescriptions = new List<int>();
+        for(;indexOfEntireDocument<processModelIndexes[indexOfProcessModels+1]; indexOfEntireDocument++)
+        {
+            line = entireDocument[indexOfEntireDocument];
+            if (line.Contains("Segment:"))
+            {
+                allProcessTagIndexes.Add(indexOfEntireDocument);
+            }
+            else if (line.Contains("Tag Name:"))
+            {
+                allTagNames.Add(indexOfEntireDocument);
+            }
+            else if (line.Contains("Description:"))
+            {
+                allDescriptions.Add(indexOfEntireDocument);
+            }
+            else if (line.Contains("Tag Type:"))
+            {
+                allTagTypes.Add(indexOfEntireDocument);
+            }
+            else if (line.Contains("Data Class:"))
+            {
+                allDataClasses.Add(indexOfEntireDocument);
+            }
+        }
+        allProcessTagIndexes.Add(processModelIndexes[indexOfProcessModels+1]);
+        for(int i=0;i<allTagNames.Count;i++)
+        {
+            SegmentTags t = new SegmentTags();
+            int smallIndex = allProcessTagIndexes.FindLastIndex(x => x<allTagNames[i]);
+            t.segment = GrabStringValueFromLine(entireDocument[allProcessTagIndexes[smallIndex]]);
+            t.dataClass = GrabStringValueFromLine(entireDocument[allDataClasses[i]]);
+            t.description = GetDescriptionOfSegmentTags(allDescriptions[i]);
+            t.tagName = GrabStringValueFromLine(entireDocument[allTagNames[i]]);
+            t.tagType = GrabStringValueFromLine(entireDocument[allTagTypes[i]]);
+
+            allSegementTags.Add(t);
+        }
+
+    }
+
+    static string GetDescriptionOfSegmentTags(int indexOfEntireDocument)
+    {
+        string line = entireDocument[indexOfEntireDocument];
+
+        if (!line.Contains("Description:"))
+        {
+            return null;
+        }
+
+        string lineValue = GrabStringValueFromLine(line);
+        int endIndex = FindEndIndex("Tag Type:",indexOfEntireDocument);
+
+        for (; indexOfEntireDocument<endIndex; indexOfEntireDocument++)
+        {
+            lineValue = lineValue + " " + FormatString(entireDocument[indexOfEntireDocument]);
+        }
+
+        if (lineValue.Trim().Equals("Description:")){
+            lineValue = "";
+        }
+        return lineValue;
+    }
+    #endregion
+
+    #region Transfers
+
+    static void ProcessModelingTransfers(int indexOfEntireDocument, int indexOfProcessModels)
+    {
+        List<int> indexOfTransfers = new List<int>();
+        List<int> indexOfConnections = new List<int>();
+
+        for(;indexOfEntireDocument<processModelIndexes[indexOfProcessModels+1]; indexOfEntireDocument++)
+        {
+            string line = entireDocument[indexOfEntireDocument];
+            if (line.Contains("Transfer:"))
+            {
+                indexOfTransfers.Add(indexOfEntireDocument);
+            }
+        }
+        List<Transfers> holderTransferList = new List<Transfers>();
+        foreach(int i in indexOfTransfers)
+        {
+            Transfers p = new Transfers();
+            p.transfer = GrabStringValueFromLine(entireDocument[i]);
+            p.description = GetDescriptionFromTransfers(i+3, processModelIndexes[indexOfProcessModels+1]);
+            p.sourceProcessClass = GrabStringValueFromLine(entireDocument[i+1]);
+            p.destProcessClass = GrabStringValueFromLine(entireDocument[i+2]);
+            p = GetUnitAttyValFromTransfers(i, processModelIndexes[indexOfProcessModels+1], p);
+            holderTransferList.Add(p);
+        }
+        // Console.WriteLine("length of indexofProcesses: " + indexOfTransfers.Count);
+
+        foreach (Transfers proc in holderTransferList)
+        {
+            foreach(string transferLine in proc.connectionLine)
+            {
+                Transfers p = new Transfers();
+                p.transfer = proc.transfer;
+                p.description = proc.description;
+                p.sourceProcessClass = proc.sourceProcessClass;
+                p.destProcessClass = proc.destProcessClass;
+                string[] newline = transferLine.Split(' ');
+                if (newline.Length>1)
+                {
+                    int j = 0;
+                    for(int i=0;i<newline.Length;i++)
+                    {
+                        if (!string.IsNullOrEmpty(newline[i]))
+                        {
+                            newline[j] = newline[i];
+                            j++;
+                        }
+                    }
+                    p.connection = newline[0];
+                    p.sourceUnit = newline[1];
+                    p.destinationUnit = newline[2];
+                }
+                else 
+                {
+                    p.connection = newline[0];
+                    p.sourceUnit = " ";
+                    p.destinationUnit = " ";
+                }
+                allTransfers.Add(p);               
+            }
+        }
+
+    }
+
+    static string GetDescriptionFromTransfers(int startIndex, int endIndex)
+    {
+        string output = "";
+        while(startIndex<endIndex && !entireDocument[startIndex].Contains("Connection"))
+        {
+            string line = entireDocument[startIndex];
+            if (line.Contains("Description"))
+            {
+                output = GrabStringValueFromLine(line);
+            }
+            else {
+                output = output + " " + line;
             }
             startIndex++;
         }
+        return output;
+    }
+
+    static Transfers GetUnitAttyValFromTransfers(int startIndex, int endIndex, Transfers p)
+    {
+        startIndex = FindEndIndex("-----", startIndex)+1;
+        int i = 0;
+        while (startIndex<endIndex && !entireDocument[startIndex].Contains("Transfer"))
+        {
+            p.numberOfConnections = i;
+            p.connectionLine.Add(entireDocument[startIndex]);
+            startIndex++;
+        }
+
+        return p;
     }
     
+    static void ProcessModelingTransferTags(int indexOfEntireDocument, int indexOfProcessModels)
+    {
+        string line = "";
+        List<int> allTTagIndexes = new List<int>();
+        List<int> allTagNames = new List<int>();
+        List<int> allDataClasses = new List<int>();
+        List<int> allTagTypes = new List<int>();
+        List<int> allDescriptions = new List<int>();
+        for(;indexOfEntireDocument<processModelIndexes[indexOfProcessModels+1]; indexOfEntireDocument++)
+        {
+            line = entireDocument[indexOfEntireDocument];
+            if (line.Contains("Transfer:"))
+            {
+                allTTagIndexes.Add(indexOfEntireDocument);
+            }
+            else if (line.Contains("Tag Name:"))
+            {
+                allTagNames.Add(indexOfEntireDocument);
+            }
+            else if (line.Contains("Description:"))
+            {
+                allDescriptions.Add(indexOfEntireDocument);
+            }
+            else if (line.Contains("Tag Type:"))
+            {
+                allTagTypes.Add(indexOfEntireDocument);
+            }
+            else if (line.Contains("Data Class:"))
+            {
+                allDataClasses.Add(indexOfEntireDocument);
+            }
+        }
+        allTTagIndexes.Add(processModelIndexes[indexOfProcessModels+1]);
+        for(int i=0;i<allTagNames.Count;i++)
+        {
+            TransferTags t = new TransferTags();
+            int smallIndex = allTTagIndexes.FindLastIndex(x => x<allTagNames[i]);
+            t.transfer = GrabStringValueFromLine(entireDocument[allTTagIndexes[smallIndex]]);
+            t.dataClass = GrabStringValueFromLine(entireDocument[allDataClasses[i]]);
+            t.description = GetDescriptionOfTransferTags(allDescriptions[i]);
+            t.tagName = GrabStringValueFromLine(entireDocument[allTagNames[i]]);
+            t.tagType = GrabStringValueFromLine(entireDocument[allTagTypes[i]]);
+
+            allTransferTags.Add(t);
+        }
+
+    }
+
+    static string GetDescriptionOfTransferTags(int indexOfEntireDocument)
+    {
+        string line = entireDocument[indexOfEntireDocument];
+
+        if (!line.Contains("Description:"))
+        {
+            return null;
+        }
+
+        string lineValue = GrabStringValueFromLine(line);
+        int endIndex = FindEndIndex("Tag Type:",indexOfEntireDocument);
+
+        for (; indexOfEntireDocument<endIndex; indexOfEntireDocument++)
+        {
+            lineValue = lineValue + " " + FormatString(entireDocument[indexOfEntireDocument]);
+        }
+
+        if (lineValue.Trim().Equals("Description:")){
+            lineValue = "";
+        }
+        return lineValue;
+    }
 
     #endregion
 
@@ -601,7 +1152,16 @@ namespace CSVTest
         }
         static string GrabStringValueFromLine(string line)
         {
-            return FormatString(line.Split(":")[1]);
+            string output = "";
+            try {
+                return FormatString(line.Split(":")[1].Trim());
+            }
+            catch
+            {
+                return line;
+            }
+            
+
         }
 
     #endregion
@@ -718,7 +1278,169 @@ namespace CSVTest
             System.IO.File.WriteAllText("C:\\Users\\abazajian\\source\\repos\\CSVTest\\CSVs\\Processes.csv", sb.ToString());
         }
 
+        static void ExportFunctionProcessTags()
+        {
+            Console.WriteLine("Got to ProcessTags export function");
+            StringBuilder sb = new StringBuilder();
 
+            string[] header = new string[5]{"Process", "Tag Name", "Description", "Tag Type", "Data Class"};
+            var headerline = string.Format("{0},{1},{2},{3},{4}", header);
+            sb.AppendLine(headerline);
+
+            foreach (ProcessTags tag in allProcessTags)
+            {
+                string[] obj = tag.getStringLineFormat(tag);
+                var output = string.Format("{0},{1},{2},{3},{4}", obj);
+
+                sb.AppendLine(output);
+            }
+
+            System.IO.File.WriteAllText("C:\\Users\\abazajian\\source\\repos\\CSVTest\\CSVs\\ProcessTags.csv", sb.ToString());
+        }
+
+        static void ExportFunctionSegments()
+        {
+            Console.WriteLine("Got to Segments export function");
+            StringBuilder sb = new StringBuilder();
+
+            string[] header = new string[2]{"Segment", "Description"};
+            var headerline = string.Format("{0},{1}", header);
+            sb.AppendLine(headerline);
+
+            foreach (Segments s in allSegements)
+            {
+                string[] obj = s.getStringLineFormat(s);
+                var output = string.Format("{0},{1}", obj);
+
+                sb.AppendLine(output);
+            }
+
+            System.IO.File.WriteAllText("C:\\Users\\abazajian\\source\\repos\\CSVTest\\CSVs\\Segments.csv", sb.ToString());
+        }
+
+        static void ExportFunctionSegmentTags()
+        {
+            Console.WriteLine("Got to SegmentTags export function");
+            StringBuilder sb = new StringBuilder();
+
+            string[] header = new string[5]{"Segment", "Tag Name", "Description", "Tag Type", "Data Class"};
+            var headerline = string.Format("{0},{1},{2},{3},{4}", header);
+            sb.AppendLine(headerline);
+
+            foreach (SegmentTags tag in allSegementTags)
+            {
+                string[] obj = tag.getStringLineFormat(tag);
+                var output = string.Format("{0},{1},{2},{3},{4}", obj);
+
+                sb.AppendLine(output);
+            }
+
+            System.IO.File.WriteAllText("C:\\Users\\abazajian\\source\\repos\\CSVTest\\CSVs\\SegmentTags.csv", sb.ToString());
+        }
+    
+        static void ExportFunctionTransfers()
+        {
+            Console.WriteLine("Got to Transfers export function");
+            StringBuilder sb = new StringBuilder();
+
+            string[] header = new string[7]{"Transfer", "Source Process Class", "Dest. Process Class", "Description", "Connection", "Source Unit", "Destination Unit"};
+            var headerline = string.Format("{0},{1},{2},{3},{4},{5},{6}", header);
+            sb.AppendLine(headerline);
+
+            foreach(Transfers p in allTransfers)
+            {
+                string[] obj = p.getStringLineFormat(p);
+                var output = string.Format("{0},{1},{2},{3},{4},{5},{6}", obj);
+
+                sb.AppendLine(output);
+            }
+
+            System.IO.File.WriteAllText("C:\\Users\\abazajian\\source\\repos\\CSVTest\\CSVs\\Transfers.csv", sb.ToString());
+        }
+    
+        static void ExportFunctionTransferTags()
+        {
+            Console.WriteLine("Got to TransferTags export function");
+            StringBuilder sb = new StringBuilder();
+
+            string[] header = new string[5]{"Transfer", "Tag Name", "Description", "Tag Type", "Data Class"};
+            var headerline = string.Format("{0},{1},{2},{3},{4}", header);
+            sb.AppendLine(headerline);
+
+            foreach (TransferTags tag in allTransferTags)
+            {
+                string[] obj = tag.getStringLineFormat(tag);
+                var output = string.Format("{0},{1},{2},{3},{4}", obj);
+
+                sb.AppendLine(output);
+            }
+
+            System.IO.File.WriteAllText("C:\\Users\\abazajian\\source\\repos\\CSVTest\\CSVs\\TransferTags.csv", sb.ToString());
+        }
+
+        static void ExportPhases(string phaseType)
+        {
+            Console.WriteLine(string.Format("Got to Phase export function for phaseType: {0}", phaseType));
+            StringBuilder sb = new StringBuilder();
+            Parameters header = new Parameters();
+            header.torp = phaseType;
+            header.phase = "Phase";
+            header.phaseDescription = "Phase Description";
+            header.parameter = "Parameter";
+            header.parameterDescription = "Parameter Description";
+            header.type = "Type";
+            header.target = "Target";
+            header.targetValue = "Target Value";
+            header.actual = "Actual";
+            header.highDev = "High Dev.";
+            header.highDevValue = "High Dev. Value";
+            header.lowDev = "Low Dev.";
+            header.lowDevValue = "Low Dev. Value";
+            header.highLimit = "High Limit";
+            header.highLimitValue = "High Limit Value";
+            header.lowLimit = "Low Limit";
+            header.lowLimitValue = "Low Limit Value";
+            header.preact = "Preact";
+            header.preactValue = "Preact Value";
+            header.lotCode = "Lot Code";
+            header.matId = "Mat. Id";
+            
+            // string[] headerObj = header.getStringLineFormat(header);
+            // // foreach(string h in headerObj){
+            // //     Console.WriteLine(h);
+            // // }
+            // var headerLine = string.Format("{0}, {1}, {2}, {3}, {5}, {6}, {7}, {8}, {9}, {10}, {11}, {12}, {13}, {14}, {15}, {16}, {17}, {18}, {19}, {20}", headerObj);
+
+            // sb.Append(headerLine);
+
+            if (phaseType.Equals("Process"))
+            {
+                Console.WriteLine(allProcessPhases[0].torp.ToString());
+                allProcessPhases.Insert(0, header);
+                foreach(Parameters param in allProcessPhases)
+                {
+                    string[] obj = param.getStringLineFormat(param);
+                    var output = string.Format("{0}, {1}, {2}, {3}, {5}, {6}, {7}, {8}, {9}, {10}, {11}, {12}, {13}, {14}, {15}, {16}, {17}, {18}, {19}, {20}", obj);
+
+                    sb.AppendLine(output);
+                }
+
+                System.IO.File.WriteAllText("C:\\Users\\abazajian\\source\\repos\\CSVTest\\CSVs\\ProcessPhases.csv", sb.ToString());
+            }
+            else if (phaseType.Equals("Transfer"))
+            {
+                allTransferPhases.Insert(0, header);
+                foreach(Parameters param in allTransferPhases)
+                {
+                    string[] obj = param.getStringLineFormat(param);
+                    var output = string.Format("{0}, {1}, {2}, {3}, {5}, {6}, {7}, {8}, {9}, {10}, {11}, {12}, {13}, {14}, {15}, {16}, {17}, {18}, {19}, {20}", obj);
+
+                    sb.AppendLine(output);
+                }
+
+                System.IO.File.WriteAllText("C:\\Users\\abazajian\\source\\repos\\CSVTest\\CSVs\\TransferPhases.csv", sb.ToString());
+            }
+        }
     #endregion
     
 
